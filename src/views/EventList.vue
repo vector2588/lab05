@@ -38,15 +38,18 @@ export default {
       required: true
     }
   },
+
   components: {
     EventCard // register it as a child component
   },
+
   data() {
     return {
       events: null,
       totalEvents: 0 // <--- Added this to store totalEvents
     }
   },
+
   created() {
     watchEffect(() => {
       EventService.getEvents(2, this.page)
@@ -59,6 +62,7 @@ export default {
         })
     })
   },
+
   computed: {
     hasNextPage() {
       // First, calculate total pages
@@ -67,6 +71,31 @@ export default {
       // Then check to see if the current page is less than the total pages.
       return this.page < totalPages
     }
+  },
+
+  // eslint-disable-next-line no-unused-vars
+  beforeRouteEnter(routeTo, routeFrom, next) {
+    EventService.getEvents(2, parseInt(routeTo.query.page) || 1)
+      .then((response) => {
+        next((comp) => {
+          comp.events = response.data
+          comp.totalEvents = response.headers['x-totla-count']
+        })
+      })
+      .catch(() => {
+        next({ name: 'NetworkError' })
+      })
+  },
+  beforeRouteUpdate(routeTo, routeFrom, next) {
+    EventService.getEvents(2, parseInt(routeTo.query.page) || 1)
+      .then((response) => {
+        this.events = response.data // <-----
+        this.totalEvents = response.headers['x-total-count'] // <-----
+        next() // <-----
+      })
+      .catch(() => {
+        next({ name: 'NetworkError' })
+      })
   }
 }
 </script>
